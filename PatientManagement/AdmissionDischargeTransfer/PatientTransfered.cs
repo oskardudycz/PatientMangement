@@ -1,17 +1,16 @@
 ﻿using System;
 
-namespace PatientManagement.AdmissionDischargeTransfer
+namespace PatientManagement.AdmissionDischargeTransfer;
+
+public class PatientTransfered
 {
-    public class PatientTransfered
+    public PatientTransfered(Guid patientId, int wardNumber)
     {
-        public PatientTransfered(Guid patientId, int wardNumber)
-        {
-            PatientId = patientId;
-            WardNumber = wardNumber;
-        }
-
-        public Guid PatientId { get; }
-
-        public int WardNumber { get; }
+        PatientId = patientId;
+        WardNumber = wardNumber;
     }
+
+    public Guid PatientId { get; }
+
+    public int WardNumber { get; }
 }
