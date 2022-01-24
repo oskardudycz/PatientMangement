@@ -6,11 +6,11 @@ namespace ProjectionManager
 {
     class Projection : IProjection
     {
-        readonly List<EventHandler> _handlers = new List<EventHandler>();
+        readonly List<EventHandler> _handlers = new();
 
         protected void When<T>(Action<T> when)
         {
-            _handlers.Add(new EventHandler { EventType = typeof(T).Name, Handler = e => when((T)e) });
+            _handlers.Add(new EventHandler(typeof(T).Name, e => when((T)e)));
         }
 
         void IProjection.Handle(string eventType, object e)

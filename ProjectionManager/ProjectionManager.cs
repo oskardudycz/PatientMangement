@@ -59,7 +59,7 @@ namespace ProjectionManager
                 var deserializedEvent = e.Deserialize();
                 projection.Handle(e.Event.EventType, deserializedEvent);
 
-                UpdatePosition(projection.GetType(), e.OriginalPosition.Value);
+                UpdatePosition(projection.GetType(), e.OriginalPosition!.Value);
             };
         }
 
@@ -106,10 +106,10 @@ namespace ProjectionManager
 
     public class ProjectionState
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = default!;
 
         public long CommitPosition { get; set; }
 
-        public long PreparePosition { get; set; }
+        public long PreparePosition { get; set; } 
     }
 }
