@@ -27,9 +27,9 @@ Console.ReadLine();
 
 async Task<Dispatcher> SetupDispatcher()
 {
-    var eventStoreConnection = EventStoreConnection.Create(
-        ConnectionSettings.Default,
-        new IPEndPoint(IPAddress.Loopback, 1113));
+    const string connectionString = 
+        "ConnectTo=tcp://localhost:1113;UseSslConnection=false;";
+    var eventStoreConnection = EventStoreConnection.Create(connectionString);
 
     await eventStoreConnection.ConnectAsync();
     var repository = new AggregateRepository(eventStoreConnection);
