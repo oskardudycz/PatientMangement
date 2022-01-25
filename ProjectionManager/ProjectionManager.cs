@@ -37,7 +37,7 @@ class ProjectionManager
             10000,
             500,
             false,
-            false, // <=== resolve linktos
+            false, // <=== resolve "link-tos"
             string.Empty
         );
 

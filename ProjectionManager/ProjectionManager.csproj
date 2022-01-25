@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Ensure.That" Version="10.1.0" />
-    <PackageReference Include="EventStore.Client" Version="21.2.1" />
+    <PackageReference Include="EventStore.Client" Version="21.2.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="RavenDB.Client" Version="5.3.0" />
   </ItemGroup>
@@ -17,4 +17,10 @@
     <ProjectReference Include="..\PatientManagement\PatientManagement.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>PatientManagement.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+  
 </Project>

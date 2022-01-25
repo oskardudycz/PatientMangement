@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CI", "CI", "{295132C9-B250-
 		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PatientManagement.Tests", "PatientManagement.Tests\PatientManagement.Tests.csproj", "{1E91F7E5-00BA-47BF-AEE4-D920DE180A61}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,10 @@ Global
 		{7AE80393-ADF2-49B7-8007-3470D81C321B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AE80393-ADF2-49B7-8007-3470D81C321B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AE80393-ADF2-49B7-8007-3470D81C321B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E91F7E5-00BA-47BF-AEE4-D920DE180A61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E91F7E5-00BA-47BF-AEE4-D920DE180A61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E91F7E5-00BA-47BF-AEE4-D920DE180A61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E91F7E5-00BA-47BF-AEE4-D920DE180A61}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
