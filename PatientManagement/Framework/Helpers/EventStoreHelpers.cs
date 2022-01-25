@@ -10,6 +10,11 @@ public static class EventStoreHelpers
     {
         return JsonConvert
             .DeserializeObject(Encoding.UTF8.GetString(resolvedEvent.Event.Data), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects })!;
+    }    
+    public static object Deserialize(this EventStore.Client.ResolvedEvent resolvedEvent)
+    {
+        return JsonConvert
+            .DeserializeObject(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span), new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Objects })!;
     }
 
     public static byte[] Serialize(this object e)

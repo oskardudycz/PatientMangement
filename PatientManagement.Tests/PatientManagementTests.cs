@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.ClientAPI;
 using PatientManagement.AdmissionDischargeTransfer.Commands;
 using PatientManagement.Framework;
@@ -102,10 +103,17 @@ public class PatientManagementTests
 
     Dispatcher SetupDispatcher(IEventStoreConnection eventStoreConnection)
     {
-        var repository = new AggregateRepository(eventStoreConnection);
+        var repository = new AggregateRepository(GetEventStore());
 
         var commandHandlerMap = new CommandHandlerMap(new Handlers(repository));
 
         return new Dispatcher(commandHandlerMap);
+    }
+
+    EventStoreClient GetEventStore()
+    {
+        const string connectionString = 
+            "esdb://localhost:2113?tls=false";
+        return new EventStoreClient(EventStoreClientSettings.Create(connectionString));
     }
 }

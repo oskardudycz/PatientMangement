@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.ClientAPI;
 using PatientManagement.AdmissionDischargeTransfer.Commands;
 using PatientManagement.Framework;
@@ -11,7 +12,7 @@ using SeedGenerator;
 var random = new Random();
 var listOfPatients = Patient.Generate(400);
 
-var dispatcher = await SetupDispatcher();
+var dispatcher = SetupDispatcher();
 
 await AdmitPatients(listOfPatients, dispatcher);
 await TransferPatients(listOfPatients, dispatcher);
@@ -77,16 +78,18 @@ async Task AdmitPatients(IEnumerable<Patient> listOfPatients, Dispatcher dispatc
     }
 }
 
-async Task<Dispatcher> SetupDispatcher()
+Dispatcher SetupDispatcher()
 {
-    var eventStoreConnection = EventStoreConnection.Create(
-        ConnectionSettings.Default,
-        new IPEndPoint(IPAddress.Loopback, 1113));
-
-    await eventStoreConnection.ConnectAsync();
-    var repository = new AggregateRepository(eventStoreConnection);
+    var repository = new AggregateRepository(GetEventStore());
 
     var commandHandlerMap = new CommandHandlerMap(new Handlers(repository));
 
     return new Dispatcher(commandHandlerMap);
+}
+
+EventStoreClient GetEventStore()
+{
+    const string connectionString = 
+        "esdb://localhost:2113?tls=false";
+    return new EventStoreClient(EventStoreClientSettings.Create(connectionString));
 }

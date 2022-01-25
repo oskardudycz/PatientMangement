@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Net;
-using System.Threading.Tasks;
-using EventStore.ClientAPI;
+using EventStore.Client;
 using PatientManagement.AdmissionDischargeTransfer.Commands;
 using PatientManagement.Framework;
 using PatientManagement.Framework.Commands;
 
-var dispatcher = await SetupDispatcher();
+var dispatcher = SetupDispatcher();
 
 var patientId = Guid.NewGuid();
 
@@ -25,17 +23,19 @@ await dispatcher.Dispatch(dischargePatient);
 
 Console.ReadLine();
 
-async Task<Dispatcher> SetupDispatcher()
+Dispatcher SetupDispatcher()
 {
-    const string connectionString = 
-        "ConnectTo=tcp://localhost:1113;UseSslConnection=false;";
-    var eventStoreConnection = EventStoreConnection.Create(connectionString);
-
-    await eventStoreConnection.ConnectAsync();
-    var repository = new AggregateRepository(eventStoreConnection);
+    var repository = new AggregateRepository(GetEventStore());
 
     var commandHandlerMap = new CommandHandlerMap(new Handlers(repository));
 
     return new Dispatcher(commandHandlerMap);
 
+}
+
+EventStoreClient GetEventStore()
+{
+    const string connectionString = 
+        "esdb://localhost:2113?tls=false";
+    return new EventStoreClient(EventStoreClientSettings.Create(connectionString));
 }
