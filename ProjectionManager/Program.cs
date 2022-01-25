@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using EventStore.ClientAPI;
+using System.Threading;
+using EventStore.Client;
 using ProjectionManager;
 
-var eventStoreConnection = GetEventStoreConnection();
+var ct = new CancellationTokenSource().Token;
+var eventStoreConnection = GetEventStore();
 
 var connectionFactory = new ConnectionFactory("PatientManagement");
 
@@ -18,17 +20,14 @@ var projectionManager = new ProjectionManager.ProjectionManager(
     connectionFactory,
     projections);
 
-projectionManager.Start();
+await projectionManager.StartAsync(ct);
 
 Console.WriteLine("Projection Manager Running");
 Console.ReadLine();
 
-static IEventStoreConnection GetEventStoreConnection()
+EventStoreClient GetEventStore()
 {
     const string connectionString = 
-        "ConnectTo=tcp://localhost:1113;UseSslConnection=false;";
-    var eventStoreConnection = EventStoreConnection.Create(connectionString);
-
-    eventStoreConnection.ConnectAsync().Wait();
-    return eventStoreConnection;
+        "esdb://localhost:2113?tls=false";
+    return new EventStoreClient(EventStoreClientSettings.Create(connectionString));
 }

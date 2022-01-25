@@ -1,73 +1,86 @@
 ﻿using System;
 using System.Collections.Generic;
-using EventStore.ClientAPI;
+using System.Threading;
+using System.Threading.Tasks;
+using EventStore.Client;
 using PatientManagement.Framework.Helpers;
-
 namespace ProjectionManager;
 
 class ProjectionManager
 {
-    readonly IEventStoreConnection _eventStoreConnection;
+    readonly EventStoreClient _eventStore;
 
     readonly List<IProjection> _projections;
 
     readonly ConnectionFactory _connectionFactory;
 
     public ProjectionManager(
-        IEventStoreConnection eventStoreConnection,
+        EventStoreClient eventStore,
         ConnectionFactory connectionFactory,
         List<IProjection> projections)
     {
         _projections = projections;
-        _eventStoreConnection = eventStoreConnection;
+        _eventStore = eventStore;
         _connectionFactory = connectionFactory;
     }
-
-    public void Start()
+    public async Task StartAsync(CancellationToken ct)
     {
         foreach (var projection in _projections)
         {
-            StartProjection(projection);
+            await StartProjectionAsync(projection, ct);
         }
     }
 
-    void StartProjection(IProjection projection)
+    async Task StartProjectionAsync(IProjection projection, CancellationToken ct)
     {
-        var defaultSettings = new CatchUpSubscriptionSettings(
-            10000,
-            500,
-            false,
-            false, // <=== resolve "link-tos"
-            string.Empty
-        );
-
         var checkpoint = GetPosition(projection.GetType());
 
-        _eventStoreConnection.SubscribeToAllFrom(
-            checkpoint,
-            defaultSettings,
-            EventAppeared(projection),
-            LiveProcessingStarted(projection));
-    }
-
-    Action<EventStoreCatchUpSubscription> LiveProcessingStarted(IProjection projection)
-    {
-        return s => Console.WriteLine($"Projection {projection.GetType().Name} has caught up, now processing live");
-    }
-
-    Action<EventStoreCatchUpSubscription, ResolvedEvent> EventAppeared(IProjection projection)
-    {
-        return (s, e) =>
+        if (checkpoint.HasValue)
         {
+            await _eventStore.SubscribeToAllAsync(
+                checkpoint.Value,
+                EventAppeared(projection),
+                false,
+                ConnectionDropped(projection)!,
+                cancellationToken: ct
+            );
+        }
+        else
+        {
+            await _eventStore.SubscribeToAllAsync(
+                EventAppeared(projection),
+                false,
+                ConnectionDropped(projection)!,
+                cancellationToken: ct
+            );
+        }
+    }
+
+    private Action<StreamSubscription, SubscriptionDroppedReason, Exception> ConnectionDropped(
+        IProjection projection)
+    {
+        return (_, reason, exc) =>
+            Console.WriteLine(
+                $"Projection {projection.GetType().Name} dropped with {reason}, Exception: {exc.Message} {exc.StackTrace}");
+    }
+
+    Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> EventAppeared(IProjection projection)
+    {
+        return (s, e, ct) =>
+        {
+            Console.WriteLine(
+                $"Handling Projection {projection.GetType().Name} event {e.Event.EventType} id: {e.Event.EventId}");
+
             if (!projection.CanHandle(e.Event.EventType))
             {
-                return;
+                return Task.CompletedTask;
             }
 
             var deserializedEvent = e.Deserialize();
             projection.Handle(e.Event.EventType, deserializedEvent);
 
             UpdatePosition(projection.GetType(), e.OriginalPosition!.Value);
+            return Task.CompletedTask;
         };
     }
 
@@ -116,7 +129,7 @@ public class ProjectionState
 {
     public string Id { get; set; } = default!;
 
-    public long CommitPosition { get; set; }
+    public ulong CommitPosition { get; set; }
 
-    public long PreparePosition { get; set; }
+    public ulong PreparePosition { get; set; }
 }

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
-using EventStore.ClientAPI;
 using PatientManagement.AdmissionDischargeTransfer.Commands;
 using PatientManagement.Framework;
 using PatientManagement.Framework.Commands;
@@ -24,8 +23,8 @@ public class PatientManagementTests
     [Fact]
     public async Task EndToEndTest()
     {
-        var eventStoreConnection = GetEventStoreConnection();
-        var dispatcher = SetupDispatcher(eventStoreConnection);
+        var eventStore = GetEventStore();
+        var dispatcher = SetupDispatcher(eventStore);
         var connectionFactory = new ConnectionFactory("PatientManagement");
 
         var projections = new List<IProjection>
@@ -35,11 +34,11 @@ public class PatientManagementTests
         };
 
         var projectionManager = new ProjectionManager.ProjectionManager(
-            eventStoreConnection,
+            eventStore,
             connectionFactory,
             projections);
 
-        projectionManager.Start();
+        await projectionManager.StartAsync(ct);
         
         var patientId = Guid.NewGuid();
 
@@ -93,20 +92,10 @@ public class PatientManagementTests
             Assert.Null(patient);
         });
     }
-    
-    static IEventStoreConnection GetEventStoreConnection()
-    {
-        const string connectionString = 
-            "ConnectTo=tcp://localhost:1113;UseSslConnection=false;";
-        var eventStoreConnection = EventStoreConnection.Create(connectionString);
 
-        eventStoreConnection.ConnectAsync().Wait();
-        return eventStoreConnection;
-    }
-
-    Dispatcher SetupDispatcher(IEventStoreConnection eventStoreConnection)
+    Dispatcher SetupDispatcher(EventStoreClient eventStore)
     {
-        var repository = new AggregateRepository(GetEventStore());
+        var repository = new AggregateRepository(eventStore);
 
         var commandHandlerMap = new CommandHandlerMap(new Handlers(repository));
 
