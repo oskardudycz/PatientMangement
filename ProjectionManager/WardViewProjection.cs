@@ -13,7 +13,7 @@ internal class WardViewProjection : Projection
             {
                 session.Store(new Patient
                 {
-                    Id = e.PatientId,
+                    Id = e.PatientId.ToString(),
                     WardNumber = e.WardNumber,
                     PatientName = e.PatientName,
                     AgeInYears = e.AgeInYears
@@ -54,7 +54,7 @@ internal class WardViewProjection : Projection
 
 public class Patient
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = default!;
 
     public int WardNumber { get; set; }
 

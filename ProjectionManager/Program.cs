@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using EventStore.ClientAPI;
-using EventStore.ClientAPI.SystemData;
 using ProjectionManager;
 
 var eventStoreConnection = GetEventStoreConnection();
@@ -27,12 +25,9 @@ Console.ReadLine();
 
 static IEventStoreConnection GetEventStoreConnection()
 {
-    ConnectionSettings settings = ConnectionSettings.Create()
-        .SetDefaultUserCredentials(new UserCredentials("admin", "changeit"));
-
-    var eventStoreConnection = EventStoreConnection.Create(
-        settings,
-        new IPEndPoint(IPAddress.Loopback, 1113));
+    const string connectionString = 
+        "ConnectTo=tcp://localhost:1113;UseSslConnection=false;";
+    var eventStoreConnection = EventStoreConnection.Create(connectionString);
 
     eventStoreConnection.ConnectAsync().Wait();
     return eventStoreConnection;

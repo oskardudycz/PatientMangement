@@ -33,11 +33,19 @@ class ProjectionManager
 
     void StartProjection(IProjection projection)
     {
+        var defaultSettings = new CatchUpSubscriptionSettings(
+            10000,
+            500,
+            false,
+            false, // <=== resolve linktos
+            string.Empty
+        );
+
         var checkpoint = GetPosition(projection.GetType());
 
         _eventStoreConnection.SubscribeToAllFrom(
             checkpoint,
-            CatchUpSubscriptionSettings.Default,
+            defaultSettings,
             EventAppeared(projection),
             LiveProcessingStarted(projection));
     }
@@ -110,5 +118,5 @@ public class ProjectionState
 
     public long CommitPosition { get; set; }
 
-    public long PreparePosition { get; set; } 
+    public long PreparePosition { get; set; }
 }
