@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 using PatientManagement.Framework.Helpers;
@@ -18,10 +19,10 @@ public class AggregateRepository
         _eventStore = eventStore;
     }
 
-    public async Task<T> Get<T>(Guid id) where T : IAggregateRoot
+    public async Task<T> Get<T>(Guid id, CancellationToken ct) where T : IAggregateRoot
     {
         var aggregateRoot = (T)Activator.CreateInstance(typeof(T), true)!;
-        var events = await GetEvents(StreamName(typeof(T), id));
+        var events = await GetEvents(StreamName(typeof(T), id), ct);
 
         events.ForEach(aggregateRoot.Apply);
         aggregateRoot.ClearEvents();
@@ -29,7 +30,7 @@ public class AggregateRepository
         return aggregateRoot;
     }
 
-    public Task Save(IAggregateRoot aggregateRoot)
+    public Task Save(IAggregateRoot aggregateRoot, CancellationToken ct)
     {
         var events = aggregateRoot
             .GetEvents()
@@ -38,8 +39,7 @@ public class AggregateRepository
         return _eventStore.AppendToStreamAsync(
             StreamName(aggregateRoot.GetType(), aggregateRoot.Id), 
             StreamRevision.FromInt64(aggregateRoot.Version), 
-            events
-        );
+            events, cancellationToken: ct);
     }
 
     static EventData ToEventData(object e)
@@ -56,7 +56,7 @@ public class AggregateRepository
         return $"{aggregate.Name}-{id}";
     }
 
-    async ValueTask<List<object>> GetEvents(string streamName)
+    async ValueTask<List<object>> GetEvents(string streamName, CancellationToken ct)
     {
         await using var readResult = _eventStore.ReadStreamAsync(
             Direction.Forwards,
@@ -66,6 +66,6 @@ public class AggregateRepository
 
         return await readResult
             .Select(@event => @event.Deserialize())
-            .ToListAsync();
+            .ToListAsync(cancellationToken: ct);
     }
 }

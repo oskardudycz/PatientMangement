@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.ClientAPI;
@@ -17,6 +18,8 @@ public class PatientManagementTests
 {
     private readonly RetryPolicy retryPolicy =
         Policy.Handle<Exception>().WaitAndRetry(5, i => TimeSpan.FromSeconds(i));
+    
+    private readonly CancellationToken ct = new CancellationTokenSource().Token;
     
     [Fact]
     public async Task EndToEndTest()
@@ -41,7 +44,7 @@ public class PatientManagementTests
         var patientId = Guid.NewGuid();
 
         var admitPatient = new AdmitPatient(patientId, "Tony Ferguson", 32, DateTime.UtcNow, 10);
-        await dispatcher.Dispatch(admitPatient);
+        await dispatcher.Dispatch(admitPatient, ct);
 
         retryPolicy.Execute(() =>
         {
@@ -56,7 +59,7 @@ public class PatientManagementTests
         });
 
         var transferPatientOne = new TransferPatient(patientId, 76);
-        await dispatcher.Dispatch(transferPatientOne);
+        await dispatcher.Dispatch(transferPatientOne, ct);
         
         retryPolicy.Execute(() =>
         {
@@ -68,7 +71,7 @@ public class PatientManagementTests
         });
 
         var transferPatientTwo = new TransferPatient(patientId, 34);
-        await dispatcher.Dispatch(transferPatientTwo);
+        await dispatcher.Dispatch(transferPatientTwo, ct);
         
         retryPolicy.Execute(() =>
         {
@@ -80,7 +83,7 @@ public class PatientManagementTests
         });
 
         var dischargePatient = new DischargePatient(patientId);
-        await dispatcher.Dispatch(dischargePatient);
+        await dispatcher.Dispatch(dischargePatient, ct);
         
         retryPolicy.Execute(() =>
         {
