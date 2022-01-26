@@ -30,15 +30,27 @@ public class AggregateRepository
         return aggregateRoot;
     }
 
-    public Task Save(IAggregateRoot aggregateRoot, CancellationToken ct)
+    public Task Create(IAggregateRoot aggregateRoot, CancellationToken ct)
     {
         var events = aggregateRoot
             .GetEvents()
             .Select(ToEventData);
 
         return _eventStore.AppendToStreamAsync(
-            StreamName(aggregateRoot.GetType(), aggregateRoot.Id), 
-            StreamRevision.FromInt64(aggregateRoot.Version), 
+            StreamName(aggregateRoot.GetType(), aggregateRoot.Id),
+            StreamState.NoStream,
+            events, cancellationToken: ct);
+    }
+
+    public Task Update(IAggregateRoot aggregateRoot, CancellationToken ct)
+    {
+        var events = aggregateRoot
+            .GetEvents()
+            .Select(ToEventData);
+
+        return _eventStore.AppendToStreamAsync(
+            StreamName(aggregateRoot.GetType(), aggregateRoot.Id),
+            StreamRevision.FromInt64(aggregateRoot.Version),
             events, cancellationToken: ct);
     }
 
