@@ -41,7 +41,7 @@ class ProjectionManager
                 checkpoint.Value,
                 EventAppeared(projection),
                 false,
-                ConnectionDropped(projection)!,
+                ConnectionDropped(projection, ct)!,
                 cancellationToken: ct
             );
         }
@@ -50,18 +50,79 @@ class ProjectionManager
             await _eventStore.SubscribeToAllAsync(
                 EventAppeared(projection),
                 false,
-                ConnectionDropped(projection)!,
+                ConnectionDropped(projection, ct)!,
                 cancellationToken: ct
             );
         }
     }
 
     private Action<StreamSubscription, SubscriptionDroppedReason, Exception> ConnectionDropped(
-        IProjection projection)
+        IProjection projection,
+        CancellationToken ct)
     {
         return (_, reason, exc) =>
+        {
             Console.WriteLine(
                 $"Projection {projection.GetType().Name} dropped with {reason}, Exception: {exc.Message} {exc.StackTrace}");
+            
+            Resubscribe(projection, ct);
+        };
+    }
+    
+    private readonly object resubscribeLock = new();
+    private void Resubscribe(IProjection projection, CancellationToken ct)
+    {
+        while (true)
+        {
+            var resubscribed = false;
+            try
+            {
+                Monitor.Enter(resubscribeLock);
+
+                using (NoSynchronizationContextScope.Enter())
+                {
+                    StartProjectionAsync(projection, ct).Wait(ct);
+                }
+
+                resubscribed = true;
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"Failed to resubscribe with '{exception.Message}{exception.StackTrace}'");
+            }
+            finally
+            {
+                Monitor.Exit(resubscribeLock);
+            }
+
+            if (resubscribed)
+                break;
+
+            Thread.Sleep(1000);
+        }
+    }
+    
+    public static class NoSynchronizationContextScope
+    {
+        public static Disposable Enter()
+        {
+            var context = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(null);
+            return new Disposable(context);
+        }
+
+        public struct Disposable: IDisposable
+        {
+            private readonly SynchronizationContext? synchronizationContext;
+
+            public Disposable(SynchronizationContext? synchronizationContext)
+            {
+                this.synchronizationContext = synchronizationContext;
+            }
+
+            public void Dispose() =>
+                SynchronizationContext.SetSynchronizationContext(synchronizationContext);
+        }
     }
 
     Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> EventAppeared(IProjection projection)
